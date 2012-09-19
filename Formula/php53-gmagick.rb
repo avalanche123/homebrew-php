@@ -1,6 +1,6 @@
-require 'formula'
+require File.join(File.dirname(__FILE__), 'abstract-php-extension')
 
-class Php53Gmagick < Formula
+class Php53Gmagick < AbstractPhpExtension
   homepage 'http://pecl.php.net/package/gmagick'
   url 'http://pecl.php.net/get/gmagick-1.1.0RC3.tgz'
   md5 '105ed64a8efb756207474e47cc6ef59e'
@@ -8,27 +8,18 @@ class Php53Gmagick < Formula
 
   depends_on 'autoconf' => :build
   depends_on 'graphicsmagick'
+  depends_on 'php53' if build.include?('with-homebrew-php') && !Formula.factory('php53').installed?
 
   def install
-    Dir.chdir "gmagick-#{version}" unless ARGV.build_head?
+    Dir.chdir "gmagick-#{version}" unless build.head?
 
     # See https://github.com/mxcl/homebrew/pull/5947
     ENV.universal_binary
 
-    system "phpize"
+    safe_phpize
     system "./configure", "--prefix=#{prefix}"
     system "make"
     prefix.install "modules/gmagick.so"
-  end
-
-  def caveats; <<-EOS.undent
-    To finish installing php53-gmagick:
-      * Add the following line to #{etc}/php.ini:
-        extension="#{prefix}/gmagick.so"
-      * Restart your webserver.
-      * Write a PHP page that calls "phpinfo();"
-      * Load it in a browser and look for the info on the gmagick module.
-      * If you see it, you have been successful!
-    EOS
+    write_config_file unless build.include? "without-config-file"
   end
 end
